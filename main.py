@@ -44,7 +44,10 @@ REQUEST_LATENCY = Histogram('request_latency_seconds', 'Request latency in secon
 
 
 @app.get("/", summary="Welcome!", tags=["Home"])
+@REQUEST_TIME.time()
+@REQUEST_IN_PROGRESS.track_inprogress()
 async def read_root():
+    REQUEST_COUNTER.inc()
     return {"QUE ONDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}
 
 

@@ -1,4 +1,3 @@
-from typing import Optional
 from uuid import UUID
 import pymongo.errors
 from beanie import PydanticObjectId
@@ -6,7 +5,6 @@ from fastapi import APIRouter, HTTPException, status, Depends, UploadFile, File
 from api.deps.user_deps import get_current_user
 from models.role_model import Role
 from models.user_model import User
-from schemas.filters_schema import FilterDates
 from schemas.user_schema import UserAuth, UserUpdate
 from services.change_user_avatar_service import ChangeUserAvatarService
 from services.user_services import UserService

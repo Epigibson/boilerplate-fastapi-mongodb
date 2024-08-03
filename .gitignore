@@ -1,0 +1,5 @@
+/.env
+/.idea
+# Compiled python files
+*.pyc
+__pycache__/

@@ -35,13 +35,13 @@ class NotificationService:
     @staticmethod
     def send_whatsapp_notification(recipients: List[str], message: str) -> Union[bool, str]:
         try:
-            account_sid = 'ACb3d5dfa4372d73ef18920aa7ec5c5f26'
-            auth_token = '2f471e4c4f842ea84bd88cb2ede69cfe'
+            account_sid = settings.TWILIO_ACCOUNT_SID
+            auth_token = settings.TWILIO_AUTH_TOKEN
             client = Client(account_sid, auth_token)
             for recipient in recipients:
                 message = client.messages.create(
                     body=message,
-                    from_='whatsapp:+14155238886',
+                    from_=f'whatsapp:{settings.TWILIO_NUMBER}',
                     to=f'whatsapp:{recipient}'
                 )
             return True

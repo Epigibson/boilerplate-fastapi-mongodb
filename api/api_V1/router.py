@@ -7,7 +7,6 @@ from api.api_V1.handlers import permission_handler
 from api.api_V1.handlers import mercado_pago_handler
 from api.api_V1.handlers import payment_hook_handler
 from api.api_V1.handlers import movements_handler
-from api.api_V1.handlers import user_logged_handler
 from api.auth.jwt import auth_router
 
 router = APIRouter()
@@ -21,4 +20,3 @@ router.include_router(notifications_handler.notification_router, prefix='/notifi
 router.include_router(mercado_pago_handler.mercado_pago_router, prefix='/mercado_pago')
 router.include_router(payment_hook_handler.payment_hook_router, prefix='/payment_hooks')
 router.include_router(movements_handler.movements_router, prefix='/movements')
-router.include_router(user_logged_handler.user_logged_router, prefix='/user_logged')

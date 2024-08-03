@@ -1,31 +1,33 @@
 import asyncio
-from datetime import datetime
+from typing import Optional
+
 from beanie import init_beanie
 from fastapi import FastAPI
 from motor.motor_asyncio import AsyncIOMotorClient
-from pytz import timezone
 from starlette.middleware.cors import CORSMiddleware
 from api.api_V1.router import router
 from core.config import settings
 from core.description import DESCRIPTION
 from core.periodic_task_runner import periodic_task_runner
-from core.update_fields import update_fields, verify_dates
+from core.update_fields import update_fields
 from docs import tags_metadata
 from models.notifications_model import Notifications
 from models.configurations_model import Configurations
-from models.receipts_model import Receipts
 from models.user_model import User
 from models.role_model import Role
 from models.permission_model import Permission
-from models.category_model import Category
-from models.product_model import Product, Discounts
 from models.user_counter import UserCounter
 from models.movement_model import Movement
-from models.sales_history_model import SalesHistory
-from models.balance_history_model import BalanceHistory
 from prometheus_client import Counter, Gauge, Histogram, Summary, make_asgi_app
 
-app = FastAPI(
+
+class CustomFastAPI(FastAPI):
+    mongodb_client: Optional[AsyncIOMotorClient] = None
+    db: Optional[AsyncIOMotorClient] = None
+    periodic_task: Optional[asyncio.Task] = None
+
+
+app = CustomFastAPI(
     title=settings.PROJECT_NAME,
     description=DESCRIPTION,
     version="1.0.0(Alpha)",
@@ -43,42 +45,47 @@ REQUEST_LATENCY = Histogram('request_latency_seconds', 'Request latency in secon
 
 @app.get("/", summary="Welcome!", tags=["Home"])
 async def read_root():
-    local_tz = timezone(settings.TIMEZONE)
-    now = datetime.now(local_tz)
-    return {
-        # "current_time": now.strftime('%Y-%m-%d %H:%M:%S %Z%z'),
-        # "message": "¡Hello, welcome to SportManager From AIS!"
-        "QUE ONDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-    }
+    return {"QUE ONDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}
 
 
 @app.on_event("startup")
 async def app_init():
-    db_client = AsyncIOMotorClient(settings.MONGO_CONNECTION_STRING).SportManager
+    app.mongodb_client = AsyncIOMotorClient(settings.MONGO_CONNECTION_STRING)
+    app.db = app.mongodb_client.EcommerceTangram
 
     await init_beanie(
-        database=db_client,
+        database=app.db,
         document_models=[
             User,
             Role,
             Permission,
             Notifications,
             Configurations,
-            Product,
-            Discounts,
-            Receipts,
-            Category,
             UserCounter,
             Movement,
-            SalesHistory,
-            BalanceHistory,
         ]
     )
 
     # Call function to update new fields.
     await update_fields()
-    await verify_dates()
-    asyncio.create_task(periodic_task_runner())
+
+    # Iniciar la tarea periódica
+    app.periodic_task = asyncio.create_task(periodic_task_runner())
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    # Cancelar la tarea periódica
+    if app.periodic_task:
+        app.periodic_task.cancel()
+        try:
+            await app.periodic_task
+        except asyncio.CancelledError:
+            pass
+
+    # Cerrar la conexión con MongoDB
+    if app.mongodb_client:
+        app.mongodb_client.close()
 
 
 # Mount the Prometheus metrics endpoint
